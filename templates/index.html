@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>메인 페이지</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+    <h1>Pybo 게시판</h1>
+
+    {% if username %}
+        <p>환영합니다, {{ username }}님! 
+           <a href="{{ url_for('auth.logout') }}">[로그아웃]</a></p>
+    {% else %}
+        <p><a href="{{ url_for('auth.login') }}">[로그인]</a> | 
+           <a href="{{ url_for('auth.register') }}">[회원가입]</a></p>
+    {% endif %}
+
+    <hr>
+
+    <p><a href="{{ url_for('board.board_list') }}">게시판 목록</a></p>
+    <ul class="list-group">
+        {% for board in boards %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('post.post_list', board_id=board.id) }}">{{ board.name }}</a>
+                <span class="text-muted">{{ board.description }}</span>
+            </li>
+        {% else %}
+            <li class="list-group-item">등록된 게시판이 없습니다.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
