@@ -13,8 +13,10 @@
     <p>{{ post.content }}</p>
     
     <div class="mt-4">
-        <a href="{{ url_for('post.post_edit', board_id=board.id, post_id=post.id) }}" class="btn btn-secondary">수정</a>
-        <a href="{{ url_for('post.post_delete', board_id=board.id, post_id=post.id) }}" class="btn btn-danger">삭제</a>
+        {% if session['user_id'] == post.user_id %}
+            <a href="{{ url_for('post.post_edit', board_id=board.id, post_id=post.id) }}" class="btn btn-secondary">수정</a>
+            <a href="{{ url_for('post.post_delete', board_id=board.id, post_id=post.id) }}" class="btn btn-danger">삭제</a>
+        {% endif %}
         <a href="{{ url_for('post.post_list', board_id=board.id) }}" class="btn btn-link">← 목록으로</a>
     </div>
 </div>
