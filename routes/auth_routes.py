@@ -16,6 +16,7 @@ def register():
         cursor.execute('SELECT id FROM user WHERE username = %s', (username,))
         if cursor.fetchone():
             error = '이미 존재하는 사용자입니다.'
+            flash(error)
 
         if error is None:
             hashed_pw = generate_password_hash(password)
@@ -41,7 +42,8 @@ def login():
         else:
             session.clear()
             session['user_id'] = user['id']
-            session['username'] = user['username']  # ✅ 이 줄 추가
+            session['username'] = user['username']
+            session['is_admin'] = user['is_admin']  # 이 줄을 추가
             return redirect(url_for('board.board_list'))
 
     return render_template('auth/login.html')

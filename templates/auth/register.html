@@ -5,6 +5,14 @@
     <title>회원가입</title>
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script>
+                alert("{{ messages[0] }}");
+            </script>
+        {% endif %}
+    {% endwith %}
+    
     <h1>회원가입</h1>
     <form method="post">
         <input type="text" name="username" placeholder="사용자명" required><br>

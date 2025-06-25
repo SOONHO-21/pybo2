@@ -1,4 +1,4 @@
-<!-- templates/board/edit.html -->
+<!-- board/edit.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -7,11 +7,17 @@
 </head>
 <body>
     <h1>게시판 수정</h1>
+
+    {% if session.is_admin %}
     <form method="post">
         <p>이름: <input type="text" name="name" value="{{ board.name }}" required></p>
         <p>설명: <input type="text" name="description" value="{{ board.description }}"></p>
         <p><input type="submit" value="수정 완료"></p>
     </form>
+    {% else %}
+        <p style="color:red;">이 페이지는 관리자만 접근할 수 있습니다.</p>
+    {% endif %}
+
     <a href="{{ url_for('board.board_list') }}">[뒤로가기]</a>
 </body>
 </html>

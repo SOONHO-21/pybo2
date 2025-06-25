@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from db import get_db
+import pymysql
 
 bp = Blueprint('board', __name__, url_prefix='/board')
 
@@ -22,6 +23,8 @@ def board_list():
 def board_create():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
+    if not session.get('is_admin', False):   # ✅ 관리자 체크
+        return "접근 권한이 없습니다.", 403
 
     if request.method == 'POST':
         name = request.form['name']
@@ -42,6 +45,8 @@ def board_create():
 def board_edit(board_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
+    if not session.get('is_admin', False):   # ✅ 관리자 체크
+        return "접근 권한이 없습니다.", 403
 
     db = get_db()
     cursor = db.cursor()
@@ -64,6 +69,8 @@ def board_edit(board_id):
 def board_delete(board_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
+    if not session.get('is_admin', False):   # ✅ 관리자 체크
+        return "접근 권한이 없습니다.", 403
 
     db = get_db()
     cursor = db.cursor()

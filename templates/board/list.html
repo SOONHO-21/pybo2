@@ -8,7 +8,7 @@
 <body>
     <div class="container mt-5">
         {% if session.user_id %}
-            <p>{{ session.user_id }}님 <a href="{{ url_for('auth.logout') }}">[로그아웃]</a></p>
+            <p>{{ session.username }}님 <a href="{{ url_for('auth.logout') }}">[로그아웃]</a></p>
             <a href="{{ url_for('board.board_create') }}" class="btn btn-primary mb-3">게시판 생성</a>
         {% else %}
             <p><a href="{{ url_for('auth.login') }}">[로그인]</a> | <a href="{{ url_for('auth.register') }}">[회원가입]</a></p>

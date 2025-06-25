@@ -1,3 +1,4 @@
+<!-- post/list.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,6 +8,21 @@
 </head>
 <body>
     <div class="container mt-5">
+        <form method="get" class="row g-2 mb-3" action="{{ url_for('post.post_list', board_id=board.id) }}">
+            <div class="col-md-3">
+                <select name="filter" class="form-select">
+                    <option value="title" {% if request.args.get('filter') == 'title' %}selected{% endif %}>제목</option>
+                    <option value="content" {% if request.args.get('filter') == 'content' %}selected{% endif %}>내용</option>
+                    <option value="all" {% if request.args.get('filter') == 'all' or not request.args.get('filter') %}selected{% endif %}>제목+내용</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control" name="q" placeholder="검색어 입력" value="{{ request.args.get('q', '') }}">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-primary w-100" type="submit">검색</button>
+            </div>
+        </form>
         <h1>{{ board.name }} - 게시글 목록</h1>
         <a href="{{ url_for('post.post_write', board_id=board.id) }}" class="btn btn-primary mb-3">글 작성</a>
         <ul class="list-group">
