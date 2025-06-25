@@ -16,6 +16,7 @@
                     <option value="all" {% if request.args.get('filter') == 'all' or not request.args.get('filter') %}selected{% endif %}>제목+내용</option>
                 </select>
             </div>
+            <!-- 검색창 -->
             <div class="col-md-6">
                 <input type="text" class="form-control" name="q" placeholder="검색어 입력" value="{{ request.args.get('q', '') }}">
             </div>
