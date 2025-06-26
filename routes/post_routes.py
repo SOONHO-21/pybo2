@@ -124,7 +124,7 @@ def post_delete(board_id, post_id):     #게시판 id, 글 id
 #댓글 등록
 @bp.route('/<int:board_id>/answer/<int:post_id>/write', methods=['POST'])
 def answer_write(board_id, post_id):
-    if 'user_id' not in session:
+    if 'user_id' not in session:    #로그인 여부 확인
         return redirect(url_for('auth.login'))
 
     content = request.form['content']
@@ -135,7 +135,7 @@ def answer_write(board_id, post_id):
     cursor.execute(
         "INSERT INTO answer (content, create_date, user_id, question_id) VALUES (%s, NOW(), %s, %s)",
         (content, user_id, post_id)
-    )   #내용, 유저id, 글 id
+    )   #answer테이블에 내용, 유저id, 글 id INSERT
     db.commit()
     return redirect(url_for('post.post_detail', board_id=board_id, post_id=post_id))
 
