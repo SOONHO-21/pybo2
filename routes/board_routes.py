@@ -23,7 +23,7 @@ def board_list():
 def board_create():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
-    if not session.get('is_admin', False):   # ✅ 관리자 체크
+    if not session.get('is_admin', False):   # 현재 세션에 관리자인지 체크
         return "접근 권한이 없습니다.", 403
 
     if request.method == 'POST':
@@ -45,12 +45,12 @@ def board_create():
 def board_edit(board_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
-    if not session.get('is_admin', False):   # ✅ 관리자 체크
+    if not session.get('is_admin', False):   # 관리자 체크
         return "접근 권한이 없습니다.", 403
 
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM board WHERE id = %s', (board_id,))
+    cursor.execute('SELECT * FROM board WHERE id = %s', (board_id))
     board = cursor.fetchone()
 
     if request.method == 'POST':
@@ -69,11 +69,11 @@ def board_edit(board_id):
 def board_delete(board_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
-    if not session.get('is_admin', False):   # ✅ 관리자 체크
+    if not session.get('is_admin', False):   # 관리자 체크
         return "접근 권한이 없습니다.", 403
 
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('DELETE FROM board WHERE id = %s', (board_id,))
+    cursor.execute('DELETE FROM board WHERE id = %s', (board_id))
     db.commit()
     return redirect(url_for('board.board_list'))

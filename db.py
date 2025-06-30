@@ -11,10 +11,10 @@ def get_db():
         g.db = pymysql.connect(
             host='localhost',
             user='root',
-            password=os.getenv('DB_PASSWORD'),  # .env에서 비밀번호 로딩
+            password=os.getenv('DB_PASSWORD'),  # .env 파일에서 비밀번호 로딩
             db='pybo',
             charset='utf8mb4',
-            cursorclass=pymysql.cursors.DictCursor
+            cursorclass=pymysql.cursors.DictCursor  # SELECT 결과를 튜플이 아닌 딕셔너리(컬럼명 기반)로 받기 위한 설정
         )
     return g.db
 
