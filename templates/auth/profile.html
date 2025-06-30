@@ -5,4 +5,5 @@
 <p>회사: {{ user.company }}</p>
 <p>이메일: {{ user.email }}</p>
 <a href="{{ url_for('auth.edit_profile') }}">[프로필 수정]</a>
+<a href="{{ url_for('auth.change_pw') }}">[비밀번호 변경]</a>
 <a href="{{ url_for('board.board_list') }}">[게시판으로]</a>

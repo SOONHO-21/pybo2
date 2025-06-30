@@ -1,3 +1,4 @@
+# routes/auth_routes.py
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from db import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -5,6 +6,7 @@ import random
 import string
 import smtplib
 from email.mime.text import MIMEText
+import re
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -16,7 +18,17 @@ def register():
         password = request.form['password']
         realname = request.form['realname']
         company = request.form.get('company') or '무직'
-        email = request.form.get('email') or None
+        email = request.form['email']
+
+        if not email:
+            flash("이메일은 필수 입력 항목입니다.")
+            return redirect(url_for('auth.edit_profile'))
+
+        # 이미 작성하신 정규표현식 검사도 이어서 가능
+        email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_pattern, email):
+            flash("올바른 이메일 형식이 아닙니다.")
+            return redirect(url_for('auth.edit_profile'))
 
         db = get_db()
         cursor = db.cursor()
@@ -57,7 +69,7 @@ def login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['is_admin'] = user['is_admin']  # 로그인한 사용자의 ID와 관리자 여부(True 또는 False)를 세션에서 꺼내기
-            return redirect(url_for('board.board_list'))
+            return redirect(url_for('index'))
 
     return render_template('auth/login.html')
 
@@ -94,6 +106,10 @@ def edit_profile():
         company = request.form.get('company') or '무직'
         email = request.form.get('email') or None
 
+        if not email:
+            flash("이메일은 필수 입력 항목입니다.")
+            return redirect(url_for('auth.edit_profile'))
+
         # 이메일 유효성 검사 (추가)
         import re
         email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
@@ -118,19 +134,20 @@ def find_id():
     if request.method == 'POST':
         realname = request.form['realname']
         company = request.form['company']
+        password = request.form['password']
 
         db = get_db()
         cursor = db.cursor()
         cursor.execute(
-            'SELECT username FROM user WHERE realname = %s AND company = %s',
+            'SELECT * FROM user WHERE realname = %s AND company = %s',
             (realname, company)
         )
         user = cursor.fetchone()
 
-        if user:
+        if user and check_password_hash(user['password'], password):
             flash(f"아이디는 '{user['username']}' 입니다.")
         else:
-            flash("일치하는 사용자가 없습니다.")
+            flash("일치하는 사용자 정보가 없습니다.")
 
     return render_template('auth/find_id.html')
 
@@ -155,12 +172,13 @@ def find_pw():
             cursor.execute('UPDATE user SET password = %s WHERE id = %s', (hashed_pw, user['id']))
             db.commit()
 
-            # 이메일 전송
+            # 이메일 전송 준비
             msg = MIMEText(f"임시 비밀번호: {temp_pw}\n로그인 후 반드시 비밀번호를 변경해주세요.")
             msg['Subject'] = "임시 비밀번호 발급 안내"
             msg['From'] = "wjdtnsgh386@gmail.com"    # 본인 Gmail 주소
             msg['To'] = email
 
+            # 이메일 전송
             s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
             s.login("wjdtnsgh386@gmail.com", "tasg sgfi feth pqfa")  # 앱 비밀번호 사용
             s.send_message(msg)
@@ -171,3 +189,37 @@ def find_pw():
             flash("일치하는 회원 정보가 없습니다.")
 
     return render_template('auth/find_pw.html')
+
+@bp.route('/change_pw', methods=['GET', 'POST'])
+def change_pw():
+    if request.method == 'POST':
+        current_pw = request.form['current_password']
+        new_pw = request.form['new_password']
+        new_pw_confirm = request.form['new_password_confirm']
+
+        db = get_db()
+        cursor = db.cursor()
+
+        user_id = session.get('user_id')  # 로그인 시 저장된 사용자 id
+        cursor.execute('SELECT * FROM user WHERE id = %s', (user_id,))
+        user = cursor.fetchone()
+
+        # 현재 비밀번호 확인
+        if not check_password_hash(user['password'], current_pw):
+            flash("현재 비밀번호가 일치하지 않습니다.")
+            return redirect(url_for('auth.edit_profile'))
+
+        # 새 비밀번호와 확인 값 비교
+        if new_pw != new_pw_confirm:
+            flash("새 비밀번호와 확인 값이 일치하지 않습니다.")
+            return redirect(url_for('auth.edit_profile'))
+
+        # 새 비밀번호 해시화 후 DB에 저장
+        new_pw_hash = generate_password_hash(new_pw)
+        cursor.execute('UPDATE user SET password = %s WHERE id = %s', (new_pw_hash, user_id))
+        db.commit()
+
+        flash("비밀번호가 성공적으로 변경되었습니다!")
+        return redirect(url_for('auth.edit_profile'))
+
+    return render_template('auth/change_pw.html')

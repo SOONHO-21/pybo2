@@ -1,3 +1,4 @@
+<!-- auth/find_id.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,8 +17,9 @@
     <h1>아이디 찾기</h1>
     <form method="post">
         <input type="text" name="realname" placeholder="성명" required><br>
-        <input type="text" name="school" placeholder="학교" required><br>
-        <button type="submit">찾기</button>
+        <input type="text" name="company" placeholder="회사" required><br>
+        <input type="password" name="password" placeholder="비밀번호" required><br>
+        <button type="submit">아이디 찾기</button>
     </form>
     <p><a href="{{ url_for('auth.login') }}">[로그인 페이지로]</a></p>
 </body>

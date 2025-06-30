@@ -1,3 +1,4 @@
+# routes/board_routes.py
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from db import get_db
 import pymysql
