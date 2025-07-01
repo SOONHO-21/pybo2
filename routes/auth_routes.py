@@ -2,6 +2,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from db import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import os
 import random
 import string
 import smtplib
@@ -87,10 +89,12 @@ def profile():
 
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT username, realname, company, email FROM user WHERE id = %s', (session['user_id'],))
+    cursor.execute('SELECT username, realname, company, email, profile_image FROM user WHERE id = %s', (session['user_id']))
     user = cursor.fetchone()
 
     return render_template('auth/profile.html', user=user)
+
+PROFILE_FOLDER = os.path.join(os.getcwd(), 'static', 'profile')
 
 #프로필 수정
 @bp.route('/profile/edit', methods=['GET', 'POST'])
@@ -110,21 +114,42 @@ def edit_profile():
             flash("이메일은 필수 입력 항목입니다.")
             return redirect(url_for('auth.edit_profile'))
 
-        # 이메일 유효성 검사 (추가)
+        # 이메일 유효성 검사
         import re
         email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if email and not re.match(email_pattern, email):
             flash("올바른 이메일 형식이 아닙니다.")
             return redirect(url_for('auth.edit_profile'))
 
-        cursor.execute(
-            'UPDATE user SET realname = %s, company = %s, email = %s WHERE id = %s',
-            (realname, company, email, session['user_id'])
-        )
+        # 파일 처리
+        file = request.files.get('profile_image')
+        filename = None
+
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(PROFILE_FOLDER, filename))   # PROFILE_FOLDER = static/profile
+
+            #DB 업데이트
+            cursor.execute(
+                'UPDATE user SET realname = %s, company = %s, email = %s, profile_image = %s WHERE id = %s',
+                (realname, company, email, filename, session['user_id'])
+            )
+        else:
+            # 사용자가 "기본 이미지로 되돌리기" 버튼 누를 경우 (예: checkbox)
+            if request.form.get('remove_image'):
+                cursor.execute(
+                    'UPDATE user SET realname = %s, company = %s, email = %s, profile_image = NULL WHERE id = %s',
+                    (realname, company, email, session['user_id'])
+                )
+            else:
+                cursor.execute(
+                    'UPDATE user SET realname = %s, company = %s, email = %s WHERE id = %s',
+                    (realname, company, email, session['user_id'])
+                )
         db.commit()
         return redirect(url_for('auth.profile'))
 
-    cursor.execute('SELECT realname, company FROM user WHERE id = %s', (session['user_id'],))
+    cursor.execute('SELECT realname, company, email, profile_image FROM user WHERE id = %s', (session['user_id']))
     user = cursor.fetchone()
     return render_template('auth/edit_profile.html', user=user)
 

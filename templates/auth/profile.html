@@ -1,5 +1,10 @@
 <!--auth/profile.html-->
 <h1>내 프로필</h1>
+{% if user.profile_image %}
+    <img src="{{ url_for('static', filename='profile/' ~ user.profile_image) }}" alt="프로필 이미지" style="width:150px; height:150px; border-radius:50%;"><br>
+{% else %}
+    <img src="{{ url_for('static', filename='default/default.png') }}" alt="프로필 이미지" style="width:150px; height:150px; border-radius:50%;"><br>
+{% endif %}
 <p>아이디: {{ user.username }}</p>
 <p>성명: {{ user.realname }}</p>
 <p>회사: {{ user.company }}</p>

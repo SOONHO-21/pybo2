@@ -1,9 +1,11 @@
 <!--auth/edit_profile.html-->
 <h1>프로필 수정</h1>
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <input type="text" name="realname" value="{{ user.realname }}" placeholder="성명" required><br>
     <input type="text" name="company" value="{{ user.company }}" placeholder="회사" required><br>
     <input type="email" name="email" value="{{ user.email }}" placeholder="이메일"><br>
+    <input type="file" name="profile_image">
+    <input type="checkbox" name="remove_image" value="yes"> 기본 이미지로 되돌리기<br>
     <button type="submit">수정 완료</button>
 </form>
 <a href="{{ url_for('auth.profile') }}">[돌아가기]</a>
