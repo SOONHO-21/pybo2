@@ -11,7 +11,18 @@
     <h1>{{ post.title }}</h1>
     <p class="text-muted">작성일: {{ post.create_date }}</p>
     <hr>
-    <p>{{ post.content }}</p>
+    {% if post.is_secret and not is_authorized %}
+        <form method="post" action="{{ url_for('post.post_detail', board_id=board.id, post_id=post.id) }}">
+            <div class="mb-3">
+            <label>비밀번호 입력</label>
+            <input type="password" name="input_pw" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">확인</button>
+        </form>
+    {% else %}
+        <!-- 본문 표시 -->
+        <p>{{ post.content }}</p>
+    {% endif %}
 
     {% if post.filename %}
     <div class="mt-3">

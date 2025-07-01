@@ -21,6 +21,14 @@
             <label class="form-label">첨부 파일 (선택)</label>
             <input type="file" name="file" class="form-control">
         </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="is_secret" id="is_secret">
+            <label class="form-check-label" for="is_secret">비밀글</label>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">비밀글 비밀번호 (비밀글 선택 시)</label>
+            <input type="password" name="secret_pw" class="form-control">
+        </div>
         <button type="submit" class="btn btn-primary">등록</button>
         <a href="{{ url_for('board.board_list') }}" class="btn btn-secondary">취소</a>
     </form>

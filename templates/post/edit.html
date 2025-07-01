@@ -18,6 +18,16 @@
                 <label for="content" class="form-label">내용</label>
                 <textarea class="form-control" id="content" name="content" rows="5">{{ post.content }}</textarea>
             </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="is_secret" name="is_secret" {% if post.is_secret %}checked{% endif %}>
+                <label class="form-check-label" for="is_secret">
+                    비밀글
+                </label>
+            </div>
+            <div class="mb-3">
+                <label for="secret_pw" class="form-label">비밀글 비밀번호 (변경 시에만 입력)</label>
+                <input type="password" class="form-control" id="secret_pw" name="secret_pw">
+            </div>
             <div class="mb-3">
                 <label for="file" class="form-label">첨부 파일 (선택)</label>
                 <input type="file" class="form-control" id="file" name="file">

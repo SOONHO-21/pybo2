@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from db import get_db
 import pymysql
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 bp = Blueprint('post', __name__, url_prefix='/post')
@@ -30,14 +31,24 @@ def post_write(board_id):
     file = request.files.get('file')    # 사용자가 업로드한 파일 브라우저로부터 수신
     filename = None     # 파일 이름 초기값은 None
 
+    is_secret = True if request.form.get('is_secret') else False
+    secret_pw = request.form.get('secret_pw')
+
+    secret_pw_hash = None
+    if is_secret:
+        if not secret_pw:
+            flash("비밀글 비밀번호를 입력해야 합니다.")
+            return redirect(url_for('post.post_write', board_id=board_id))
+        secret_pw_hash = generate_password_hash(secret_pw)
+
     if file and file.filename:  # 파일과 파일 이름이 있으면 즉, 유저가 파일을 올렸으면
         filename = secure_filename(file.filename)   # 사용자가 서버의 파일시스템이 있는 파일을 수정하는 것을 방지하기 위해 사용
         file.save(os.path.join(UPLOAD_FOLDER, filename))    # 저장 경로 + 파일 이름해서 서버에 저장
 
     cursor.execute(
-        'INSERT INTO question (title, content, create_date, user_id, board_id, filename) '
-        'VALUES(%s, %s, NOW(), %s, %s, %s)',
-        (title, content, user_id, board_id, filename)   # filename 포함해서 DB에 저장
+        'INSERT INTO question (title, content, create_date, user_id, board_id, filename, is_secret, secret_pw) '
+        'VALUES(%s, %s, NOW(), %s, %s, %s, %s, %s)',
+        (title, content, user_id, board_id, filename, is_secret, secret_pw_hash)   # filename 포함해서 DB에 저장
     )   # 글과 연결된 첨부파일이 무엇인지 추적할 수 있음
     db.commit()
     return redirect(url_for('post.post_list', board_id=board_id))
@@ -73,24 +84,38 @@ def post_list(board_id):
     return render_template('post/list.html', posts=posts, board=board)
 
 # 글 상세 보기
-@bp.route('/<int:board_id>/detail/<int:post_id>')
+@bp.route('/<int:board_id>/detail/<int:post_id>', methods=['GET', 'POST'])
 def post_detail(board_id, post_id):
     db = get_db()
     cursor = db.cursor()
-
-    cursor.execute('SELECT * FROM board WHERE id = %s', (board_id,))
-    board = cursor.fetchone()
-
     cursor.execute('SELECT * FROM question WHERE id = %s AND board_id = %s', (post_id, board_id))
     post = cursor.fetchone()
 
-    cursor.execute('SELECT * FROM answer WHERE question_id = %s ORDER BY create_date ASC', (post_id))
-    answers = cursor.fetchall()
+    if not post:
+        return "글을 찾을 수 없습니다.", 404
 
-    return render_template('post/detail.html', post=post, board=board, answers=answers)
+    cursor.execute('SELECT * FROM board WHERE id = %s', (board_id))
+    board = cursor.fetchone()
+
+    is_authorized = False
+
+    if post['is_secret']:
+        if request.method == 'POST':
+            input_pw = request.form['input_pw']
+            if not check_password_hash(post['secret_pw'], input_pw):
+                flash("비밀번호가 일치하지 않습니다.")
+                return redirect(url_for('post.post_detail', board_id=board_id, post_id=post_id))
+            else:
+                is_authorized = True
+        else:
+            post['content'] = None
+    else:
+        is_authorized = True
+
+    return render_template('post/detail.html', post=post, board=board, board_id=board_id, is_authorized=is_authorized)
 
 # 글 수정
-@bp.route('/<int:board_id>/edit/<int:post_id>', methods=['GET', 'POST'])
+@bp.route('/<int:board_id>/edit/<int:post_id>', methods=['GET', 'POST'])    #/게시판아이디/edit/게시글아이디
 def post_edit(board_id, post_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
@@ -100,24 +125,53 @@ def post_edit(board_id, post_id):
     cursor.execute('SELECT * FROM question WHERE id = %s AND board_id = %s', (post_id, board_id))
     post = cursor.fetchone()
 
-    if post is None or post['user_id'] != session['user_id']:
+    if post is None or post['user_id'] != session['user_id']:   #현재 세션 사용자와 글 올린 사용자 비교
         return "권한이 없습니다.", 403
 
-    if request.method == 'POST':
+    # 비밀글이면 먼저 비밀번호 확인
+    if post['is_secret']:
+        # 인증 여부 확인 (session에 저장)
+        if f'post_edit_auth_{post_id}' not in session:  # 현재 이 글에 대해 인증된 적 있는지 확인
+            #세션에 인증 플래그 없으면 -> 비밀번호 입력 폼을 먼저 보여줘야 함. 인증 세션의 이름 규칙은 여기서 정해진 것
+            if request.method == 'POST' and 'input_pw' in request.form: # POST + input_pw 있으면 -> 비밀번호 검증
+                input_pw = request.form['input_pw']     #사용자가 입력한 글 비밀번호
+                if not check_password_hash(post['secret_pw'], input_pw):    # 글 비밀번호가 맞지 않으면(해시값 검증)
+                    flash("비밀번호가 일치하지 않습니다.")  # flash 메시지 + 리다이렉트
+                    return redirect(url_for('post.post_edit', board_id=board_id, post_id=post_id))
+                else:   # 글 비밀번호가 맞으면
+                    session[f'post_edit_auth_{post_id}'] = True # post_edit_auth_글ID 플래그 저장
+                                                                # 여기서부터 이름 패턴이 프로그램에 저장되기 시작
+                    return redirect(url_for('post.post_edit', board_id=board_id, post_id=post_id))  # 그러고 글 수정 템플릿으로 리다이렉트
+            # 비밀번호 입력 폼 렌더링
+            return render_template('post/check_pw.html', board_id=board_id, post_id=post_id)
+        
+    # 글 수정 폼
+    if request.method == 'POST' and 'title' in request.form:
         title = request.form['title']
         content = request.form['content']
-        file = request.files.get('file')    # 파일 수신
-        filename = post['filename']  # 기본값: 기존 파일 유지
+        file = request.files.get('file')
+        filename = post['filename']
 
-        if file and file.filename:
+        is_secret = True if request.form.get('is_secret') else False    # 체크박스로 비밀 글 여부 결정
+        secret_pw = request.form.get('secret_pw')   # 글 비밀번호 get
+        secret_pw_hash = post['secret_pw']  # get한 글 비밀번호 해시
+
+        if is_secret:   #비밀 글이라면
+            if secret_pw:   #비밀번호를 입력했으면
+                secret_pw_hash = generate_password_hash(secret_pw)  # 설정한 글 비밀번호 해시 저장
+        else:   # 비밀 글이 아니라면
+            secret_pw_hash = None
+
+        if file and file.filename:  # 파일 여부 검증
             filename = secure_filename(file.filename)
-            file.save(os.path.join(UPLOAD_FOLDER, filename))    # [파일 경로 + 이름]으로 저장
+            file.save(os.path.join(UPLOAD_FOLDER, filename))    # 파일 경로 + 이름 DB 저장
 
         cursor.execute(
-            'UPDATE question SET title=%s, content=%s, filename=%s WHERE id=%s AND board_id=%s',
-            (title, content, filename, post_id, board_id)   #filename 포함 DB에 저장
+            'UPDATE question SET title=%s, content=%s, filename=%s, is_secret=%s, secret_pw=%s WHERE id=%s AND board_id=%s',
+            (title, content, filename, is_secret, secret_pw_hash, post_id, board_id)
         )
         db.commit()
+        session.pop(f'post_edit_auth_{post_id}', None)  # 글 수정 완료 후 인증 세션 플래그 제거
         return redirect(url_for('post.post_detail', board_id=board_id, post_id=post_id))
 
     return render_template('post/edit.html', post=post, board_id=board_id)
