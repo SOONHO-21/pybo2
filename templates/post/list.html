@@ -33,6 +33,9 @@
                         <a href="{{ url_for('post.post_detail', board_id=board.id, post_id=post.id) }}">
                             {{ post.title }}
                         </a>
+                        <small class="text-muted">
+                            [작성자: <a href="{{ url_for('auth.user_profile', user_id=post.user_id) }}">{{ post.username }}</a>]
+                        </small>
                     </div>
                     <span class="text-muted">{{ post.create_date }}</span>
                 </li>

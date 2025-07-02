@@ -78,7 +78,13 @@ def post_list(board_id):
             sql = "SELECT * FROM question WHERE board_id = %s AND (title LIKE %s OR content LIKE %s) ORDER BY create_date DESC"
             cursor.execute(sql, (board_id, like, like))
     else:
-        cursor.execute("SELECT * FROM question WHERE board_id = %s ORDER BY create_date DESC", (board_id))
+        cursor.execute("""
+                    SELECT q.*, u.username
+                    FROM question q
+                    JOIN user u ON q.user_id = u.id
+                    WHERE q.board_id = %s
+                    ORDER BY q.create_date DESC
+                """, (board_id))
 
     posts = cursor.fetchall()   # DB에서 게시글 전부 가져오기
     return render_template('post/list.html', posts=posts, board=board)
@@ -88,7 +94,12 @@ def post_list(board_id):
 def post_detail(board_id, post_id):
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM question WHERE id = %s AND board_id = %s', (post_id, board_id))
+    cursor.execute("""
+                    SELECT q.*, u.username
+                    FROM question q
+                    JOIN user u ON q.user_id = u.id
+                    WHERE q.id = %s AND q.board_id = %s
+                """, (post_id, board_id))
     post = cursor.fetchone()
 
     if not post:
@@ -97,23 +108,41 @@ def post_detail(board_id, post_id):
     cursor.execute('SELECT * FROM board WHERE id = %s', (board_id))
     board = cursor.fetchone()
 
+    # 댓글 가져오기
+    cursor.execute("""
+            SELECT a.*, u.username
+            FROM answer a
+            JOIN user u ON a.user_id = u.id
+            WHERE a.question_id = %s
+            ORDER BY a.create_date ASC
+        """, (post_id,))
+    answers = cursor.fetchall()
+
     is_authorized = False
 
+    #비밀 글 여부 확인
     if post['is_secret']:
         if request.method == 'POST':
-            input_pw = request.form['input_pw']
-            if not check_password_hash(post['secret_pw'], input_pw):
+            input_pw = request.form['input_pw']     #폼에서 비밀번호 수신
+            if not check_password_hash(post['secret_pw'], input_pw):    #해시된 비밀번호와 입력한 비밀번호 비교
                 flash("비밀번호가 일치하지 않습니다.")
                 return redirect(url_for('post.post_detail', board_id=board_id, post_id=post_id))
-            else:
-                is_authorized = True
+            else:   # 입력한 비밀번호가 맞으면
+                is_authorized = True    #인증
         else:
             post['content'] = None
     else:
         is_authorized = True
-
-    return render_template('post/detail.html', post=post, board=board, board_id=board_id, is_authorized=is_authorized)
-
+    
+    return render_template(
+        'post/detail.html',
+        post=post,
+        board=board,
+        board_id=board_id,
+        is_authorized=is_authorized,
+        answers=answers
+    )
+    
 # 글 수정
 @bp.route('/<int:board_id>/edit/<int:post_id>', methods=['GET', 'POST'])    #/게시판아이디/edit/게시글아이디
 def post_edit(board_id, post_id):

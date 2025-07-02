@@ -9,7 +9,7 @@
 <body>
 <div class="container mt-5">
     <h1>{{ post.title }}</h1>
-    <p class="text-muted">작성일: {{ post.create_date }}</p>
+    <p class="text-muted">작성자: {{ post.username }} | 작성일: {{ post.create_date }}</p>
     <hr>
     {% if post.is_secret and not is_authorized %}
         <form method="post" action="{{ url_for('post.post_detail', board_id=board.id, post_id=post.id) }}">
@@ -22,15 +22,15 @@
     {% else %}
         <!-- 본문 표시 -->
         <p>{{ post.content }}</p>
-    {% endif %}
 
-    {% if post.filename %}
-    <div class="mt-3">
-        <strong>첨부 파일:</strong>
-        <a href="{{ url_for('static', filename='uploads/' ~ post.filename) }}" download>
-            {{ post.filename }}
-        </a>
-    </div>
+        {% if post.filename %}
+        <div class="mt-3">
+            <strong>첨부 파일:</strong>
+            <a href="{{ url_for('static', filename='uploads/' ~ post.filename) }}" download>
+                {{ post.filename }}
+            </a>
+        </div>
+        {% endif %}
     {% endif %}
     
     <div class="mt-4">
@@ -58,7 +58,12 @@
     <ul class="list-group">
         {% for ans in answers %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>{{ ans.content }}</div>
+            <div>
+                <strong>
+                    [작성자: <a href="{{ url_for('auth.user_profile', user_id=ans.user_id) }}">{{ ans.username }}</a>]
+                </strong><br>
+                {{ ans.content }}
+            </div>
             <div>
                 {% if session['user_id'] == ans.user_id %}
                     <a href="{{ url_for('post.answer_edit', board_id=board.id, answer_id=ans.id) }}" class="btn btn-sm btn-outline-secondary">수정</a>

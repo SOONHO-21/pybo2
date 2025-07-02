@@ -1,0 +1,15 @@
+<!-- auth/user_profile.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ user.username }}님의 프로필</title>
+</head>
+<body>
+    <h1>{{ user.username }}님의 프로필</h1>
+    <p>성명: {{ user.realname }}</p>
+    <p>회사: {{ user.company }}</p>
+    <p>이메일: {{ user.email }}</p>
+    <a href="{{ url_for('board.board_list') }}">[게시판으로 돌아가기]</a>
+</body>
+</html>

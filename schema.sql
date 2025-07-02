@@ -13,17 +13,21 @@ CREATE TABLE board (
 CREATE TABLE user (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(100) NOT NULL
+    password VARCHAR(200) NOT NULL,
+    realname VARCHAR(100) NOT NULL,
+    company VARCHAR(255) DEFAULT '무직',
+    email VARCHAR(255)
 );
 
 CREATE TABLE question (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    password VARCHAR(200),
     title VARCHAR(200) NOT NULL,
     content TEXT NOT NULL,
     create_date DATETIME NOT NULL,
     user_id INT NOT NULL,
     board_id INT NOT NULL,
+    is_secret BOOLEAN DEFAULT FALSE,
+    secret_pw VARCHAR(200),
     FOREIGN KEY (user_id) REFERENCES user(id),
     FOREIGN KEY (board_id) REFERENCES board(id)
 );

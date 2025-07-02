@@ -115,7 +115,6 @@ def edit_profile():
             return redirect(url_for('auth.edit_profile'))
 
         # 이메일 유효성 검사
-        import re
         email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if email and not re.match(email_pattern, email):
             flash("올바른 이메일 형식이 아닙니다.")
@@ -152,6 +151,19 @@ def edit_profile():
     cursor.execute('SELECT realname, company, email, profile_image FROM user WHERE id = %s', (session['user_id']))
     user = cursor.fetchone()
     return render_template('auth/edit_profile.html', user=user)
+
+#다른 사용자 프로필
+@bp.route('/user/<int:user_id>')
+def user_profile(user_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT username, realname, company, email FROM user WHERE id = %s', (user_id))
+    user = cursor.fetchone()
+
+    if not user:
+        return "사용자를 찾을 수 없습니다.", 404
+
+    return render_template('auth/user_profile.html', user=user)
 
 #아이디 찾기
 @bp.route('/find_id', methods=['GET', 'POST'])
@@ -226,7 +238,7 @@ def change_pw():
         cursor = db.cursor()
 
         user_id = session.get('user_id')  # 로그인 시 저장된 사용자 id
-        cursor.execute('SELECT * FROM user WHERE id = %s', (user_id,))
+        cursor.execute('SELECT * FROM user WHERE id = %s', (user_id))
         user = cursor.fetchone()
 
         # 현재 비밀번호 확인
