@@ -6,6 +6,11 @@
     <title>{{ user.username }}님의 프로필</title>
 </head>
 <body>
+    {% if user.profile_image %}
+        <img src="{{ url_for('static', filename='profile/' ~ user.profile_image) }}" alt="프로필 이미지" style="width:150px; height:150px; border-radius:50%;"><br>
+    {% else %}
+        <img src="{{ url_for('static', filename='default/default.png') }}" alt="프로필 이미지" style="width:150px; height:150px; border-radius:50%;"><br>
+    {% endif %}
     <h1>{{ user.username }}님의 프로필</h1>
     <p>성명: {{ user.realname }}</p>
     <p>회사: {{ user.company }}</p>

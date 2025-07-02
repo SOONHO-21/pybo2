@@ -157,7 +157,7 @@ def edit_profile():
 def user_profile(user_id):
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT username, realname, company, email FROM user WHERE id = %s', (user_id))
+    cursor.execute('SELECT username, realname, company, email, profile_image FROM user WHERE id = %s', (user_id))
     user = cursor.fetchone()
 
     if not user:
