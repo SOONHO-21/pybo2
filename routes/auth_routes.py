@@ -217,7 +217,7 @@ def find_pw():
 
             # 이메일 전송
             s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            s.login("wjdtnsgh386@gmail.com", "tasg sgfi feth pqfa")  # 앱 비밀번호 사용
+            s.login("wjdtnsgh386@gmail.com", os.getenv('Gmail_APP_PASSWORD'))  # 앱 비밀번호 사용
             s.send_message(msg)
             s.quit()
 
